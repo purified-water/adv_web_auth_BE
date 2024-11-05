@@ -25,12 +25,16 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     async signUp(signUpDto) {
-        const { email, password, createdAt } = signUpDto;
-        if (!email || !password) {
-            throw new common_1.BadRequestException('Email and password are required');
+        const { email, username, fullname, password, createdAt } = signUpDto;
+        if (!email || !password !== !username) {
+            throw new common_1.BadRequestException('Email, usename and password are required');
         }
         if (password.length < 6) {
             throw new common_1.BadRequestException('Password must be at least 6 characters long');
+        }
+        const usernameExists = await this.userModel.findOne({ username });
+        if (usernameExists) {
+            throw new common_1.UnauthorizedException('Username already exists');
         }
         const userExists = await this.userModel.findOne({ email });
         if (userExists) {
@@ -39,8 +43,10 @@ let AuthService = class AuthService {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await this.userModel.create({
             email,
+            username,
+            fullname,
             password: hashedPassword,
-            createdAt,
+            createdAt: new Date(),
         });
         const token = this.jwtService.sign({ email: user.email, id: user._id });
         return { token };
@@ -59,7 +65,10 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid password');
         }
         const token = this.jwtService.sign({ email: user.email, id: user._id });
-        return { token };
+        return {
+            token: token,
+            username: user.username
+        };
     }
 };
 exports.AuthService = AuthService;

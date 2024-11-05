@@ -18,15 +18,21 @@ export class AuthService {
   ) {}
 
   async signUp(signUpDto): Promise<{ token: string }> {
-    const { email, password, createdAt } = signUpDto;
+    const { email, username, fullname, password, createdAt } = signUpDto;
 
-    if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
+    if (!email || !password !== !username) {
+      throw new BadRequestException('Email, usename and password are required');
     }
+
     if (password.length < 6) {
       throw new BadRequestException(
         'Password must be at least 6 characters long',
       );
+    }
+
+    const usernameExists = await this.userModel.findOne({ username });
+    if (usernameExists) {
+      throw new UnauthorizedException('Username already exists');
     }
 
     const userExists = await this.userModel.findOne({ email });
@@ -39,8 +45,10 @@ export class AuthService {
 
     const user = await this.userModel.create({
       email,
+      username,
+      fullname,
       password: hashedPassword,
-      createdAt,
+      createdAt: new Date(),
     });
 
     const token = this.jwtService.sign({ email: user.email, id: user._id });
@@ -48,7 +56,7 @@ export class AuthService {
     return { token };
   }
 
-  async login(loginDto): Promise<{ token: string }> {
+  async login(loginDto): Promise<{ token: string, username: string }> {
     const { email, password } = loginDto;
 
     if (!email || !password) {
@@ -68,6 +76,9 @@ export class AuthService {
 
     const token = this.jwtService.sign({ email: user.email, id: user._id });
 
-    return { token };
+    return { 
+      token: token,
+      username: user.username
+    };
   }
 }

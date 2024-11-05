@@ -10,5 +10,6 @@ export declare class AuthService {
     }>;
     login(loginDto: any): Promise<{
         token: string;
+        username: string;
     }>;
 }

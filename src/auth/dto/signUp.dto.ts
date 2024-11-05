@@ -7,7 +7,14 @@ export class SignUpDto {
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(6)
+  username: string;
+
+  @IsString()
+  fullname: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   password: string;
 
   createdAt: Date;
